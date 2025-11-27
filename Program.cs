@@ -8,7 +8,7 @@ builder.Services.AddSwaggerGen();
 
 // Register repositories
 builder.Services.AddSingleton<IMessageRepository, InMemoryMessageRepository>();
-
+builder.Services.AddSingleton<IMessageLogic, MessageLogic>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
