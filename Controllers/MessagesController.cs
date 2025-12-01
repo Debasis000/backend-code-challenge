@@ -9,122 +9,45 @@ namespace CodeChallenge.Api.Controllers;
 [Route("api/v1/organizations/{organizationId}/messages")]
 public class MessagesController : ControllerBase
 {
-    private readonly IMessageRepository _repository;
-    private readonly IMessageLogic _logic;
-    private readonly ILogger<MessagesController> _logger;
+    private readonly IMessageLogic _messageLogic;
 
-    public MessagesController(IMessageRepository repository, IMessageLogic messageLogic, ILogger<MessagesController> logger)
+    // Fixed: Depends on IMessageLogic, not IMessageRepository (separation of concerns)
+    public MessagesController(IMessageLogic messageLogic)
     {
-        _repository = repository;
-        _logic = messageLogic;
-        _logger = logger;
-    }
-
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<Message>>> GetAll(Guid organizationId)
-    {
-        try
-        {
-            var messages = await _repository.GetAllByOrganizationAsync(organizationId);
-            return Ok(messages);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while retrieving messages for organization {OrganizationId}", organizationId);
-            return StatusCode(500, "An error occurred while retrieving messages.");
-        }
-    }
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Message>> Get(Guid organizationId, Guid id)
-    {
-        try
-        {
-            var message = await _repository.GetByIdAsync(organizationId, id);
-            return message is null ? NotFound() : Ok(message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while retrieving messages for organization {OrganizationId} and {id}", organizationId, id);
-            return StatusCode(500, "An error occurred while retrieving the message.");
-        }
+        _messageLogic = messageLogic;
     }
 
     [HttpPost]
-    public async Task<ActionResult<Message>> Create(Guid organizationId, CreateMessageRequest request)
+    public async Task<ActionResult<Message>> Create([FromBody] Message message)
     {
-        try
-        {
-            var message = new Message
-            {
-                OrganizationId = organizationId,
-                Title = request.Title,
-                Content = request.Content ?? string.Empty,
-                IsActive = true
-            };
-
-            var created = await _repository.CreateAsync(message);
-
-            return CreatedAtAction(
-                nameof(Get),
-                new { organizationId, id = created.Id },
-                created);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while creating a message for organization {OrganizationId}", organizationId);
-            return StatusCode(500, "An error occurred while creating the message.");
-        }
+        var created = await _messageLogic.CreateMessageAsync(message);
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid organizationId, Guid id, Message message)
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Message>> Get(Guid id)
     {
-        try
-        {
-            if (id != message.Id)
-            {
-                return BadRequest("Message ID mismatch.");
-            }
+        var message = await _messageLogic.GetMessageAsync(id);
+        if (message == null) return NotFound();
+        return Ok(message);
+    }
 
-            message.OrganizationId = organizationId;
-
-            var updatedMessage = await _repository.UpdateAsync(message);
-
-            if (updatedMessage == null)
-            {
-                return NotFound("Message not found.");
-            }
-
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while updating the message {MessageId} for organization {OrganizationId}", id, organizationId);
-            return StatusCode(500, "An error occurred while updating the message.");
-        }
+   
+    [HttpPut("{id}")]
+    public async Task<ActionResult<Message>> Update(Guid id, [FromBody] UpdateMessageDto dto)
+    {
+        var updated = await _messageLogic.UpdateMessageAsync(id, dto);
+        if (updated == null) return NotFound();
+        return Ok(updated);
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid organizationId, Guid id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        try
-        {
-            var deleted = await _repository.DeleteAsync(organizationId, id);
-
-            if (!deleted)
-            {
-                return NotFound("Message not found.");
-            }
-
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An error occurred while deleting the message {MessageId} for organization {OrganizationId}", id, organizationId);
-            return StatusCode(500, "An error occurred while deleting the message.");
-        }
+        var deleted = await _messageLogic.DeleteMessageAsync(id);
+        if (!deleted) return NotFound();
+        return NoContent();
     }
 
-     
+
 }

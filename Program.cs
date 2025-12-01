@@ -1,4 +1,9 @@
+﻿using CodeChallenge.Api.Logic;
 using CodeChallenge.Api.Repositories;
+using CodeChallenge.Middleware;
+using Microsoft.EntityFrameworkCore;
+using CodeChallenge.Api.Data;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,19 +11,34 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+<<<<<<< HEAD
 // Register repositories
 builder.Services.AddSingleton<IMessageRepository, InMemoryMessageRepository>();
 builder.Services.AddSingleton<IMessageLogic, MessageLogic>();
+=======
+// Your services registrations
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessageLogic, MessageLogic>();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Logging.AddConsole();
+
+>>>>>>> ef9bf40 (Changes_On_Controller_Repo_01-12-2025)
 var app = builder.Build();
+
+app.UseGlobalExceptionHandler();   
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+
+app.MapControllers();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
 
 app.Run();

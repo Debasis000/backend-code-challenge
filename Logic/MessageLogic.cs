@@ -5,55 +5,44 @@ namespace CodeChallenge.Api.Logic
 {
     public class MessageLogic : IMessageLogic
     {
-        private readonly IMessageLogic _messageRepository;
-        public MessageLogic(IMessageLogic messageRepository)
+        private readonly IMessageRepository _messageRepository;
+
+       
+        public MessageLogic(IMessageRepository messageRepository)
         {
             _messageRepository = messageRepository;
         }
 
-        public Task<Result> CreateMessageAsync(Guid organizationId, CreateMessageRequest request)
+        public async Task<Message> CreateMessageAsync(Message message)
         {
-            throw new NotImplementedException();
+           
+            if (string.IsNullOrWhiteSpace(message.Content))
+                throw new ArgumentException("Content is required");
+
+            return await _messageRepository.CreateAsync(message);
         }
 
-        public async Task<Result> DeleteMessageAsync(Guid organizationId, Guid id)
+        public async Task<Message?> GetMessageAsync(Guid id)
         {
-            var message = await _messageRepository.GetMessageAsync(organizationId, id);
-
-            if (message == null)
-                return new NotFound("Message not found.");
-
-            if (!message.IsActive)
-                return new ValidationError(new Dictionary<string, string[]>
-        {
-            { "IsActive", new[] { "Cannot delete an inactive message." } }
-        });
-
-            var deleted = await _messageRepository.DeleteMessageAsync(organizationId, id);
-
-            return deleted != null ? new Deleted() : new NotFound("Message could not be deleted.");
+            
+            return await _messageRepository.GetByIdAsync(id);
         }
 
-
-        public async Task<IEnumerable<Message>> GetAllMessagesAsync(Guid organizationId)
+        public async Task<Message?> UpdateMessageAsync(Guid id, UpdateMessageDto dto)
         {
-            var messages = await _messageRepository.GetAllMessagesAsync(organizationId);
-            return messages.Where(m => m.IsActive);
+            if (string.IsNullOrWhiteSpace(dto.Content))
+                throw new ArgumentException("Content is required");
+
+            var message = new Message { Content = dto.Content };
+            
+            return await _messageRepository.UpdateAsync(id, message);
         }
 
-        public async Task<Message?> GetMessageAsync(Guid organizationId, Guid id)
+        public async Task<bool> DeleteMessageAsync(Guid id)
         {
-            var message = await _messageRepository.GetMessageAsync(organizationId, id);
-            return message?.IsActive == true ? message : null;
+           
+            return await _messageRepository.DeleteAsync(id);
         }
-
-        public async Task<Result> UpdateMessageAsync(Message message)
-        {
-            var updatedMessage = await _messageRepository.UpdateMessageAsync(message);
-
-            return updatedMessage != null ? new Updated() : new NotFound("Message could not be updated.");
-        }
-
 
 
     }
