@@ -11,8 +11,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<IMessageRepository, InMemoryMessageRepository>();
-builder.Services.AddSingleton<IMessageLogic, MessageLogic>();
 
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IMessageLogic, MessageLogic>();
