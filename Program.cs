@@ -11,12 +11,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-<<<<<<< HEAD
-// Register repositories
 builder.Services.AddSingleton<IMessageRepository, InMemoryMessageRepository>();
 builder.Services.AddSingleton<IMessageLogic, MessageLogic>();
-=======
-// Your services registrations
+
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IMessageLogic, MessageLogic>();
 
@@ -25,7 +22,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Logging.AddConsole();
 
->>>>>>> ef9bf40 (Changes_On_Controller_Repo_01-12-2025)
+
 var app = builder.Build();
 
 app.UseGlobalExceptionHandler();   
