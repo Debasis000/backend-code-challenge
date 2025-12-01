@@ -2,9 +2,6 @@ using CodeChallenge.Api.Models;
 
 namespace CodeChallenge.Api.Repositories;
 
-/// <summary>
-/// In-memory implementation of IMessageRepository
-/// </summary>
 public class InMemoryMessageRepository : IMessageRepository
 {
     private readonly Dictionary<Guid, Message> _messages = new();
@@ -79,6 +76,43 @@ public class InMemoryMessageRepository : IMessageRepository
             return Task.FromResult(_messages.Remove(id));
           }
             return Task.FromResult(false);
+        }
+    }
+
+    public Task<Message?> GetByIdAsync(Guid id)
+    {
+        lock (_lock)
+        {
+            _messages.TryGetValue(id, out var message);
+            return Task.FromResult(message); 
+        }
+    }
+
+    public Task<Message?> UpdateAsync(Guid id, Message message)
+    {
+        lock (_lock)
+        {
+            if (!_messages.ContainsKey(id))
+                return Task.FromResult<Message?>(null);
+
+           
+            if (_messages[id].OrganizationId != message.OrganizationId)
+                throw new UnauthorizedAccessException("Cannot change the OrganizationId of a message");
+
+            
+            message.Id = id;
+            message.UpdatedAt = DateTime.UtcNow;
+
+            _messages[id] = message;
+            return Task.FromResult<Message?>(message);
+        }
+    }
+
+    public Task<bool> DeleteAsync(Guid id)
+    {
+        lock (_lock)
+        {
+            return Task.FromResult(_messages.Remove(id));
         }
     }
 }
