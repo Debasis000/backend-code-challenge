@@ -1,49 +1,47 @@
 ﻿using CodeChallenge.Api.Data;
 using CodeChallenge.Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CodeChallenge.Api.Repositories
 {
     public class EfMessageRepository : IMessageRepository
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
 
-        public EfMessageRepository(AppDbContext context)
+        public EfMessageRepository(AppDbContext db)
         {
-            _context = context;
+            _db = db;
         }
 
-        public async Task<Message?> GetByIdAsync(Guid id)
+        public async Task AddAsync(Message message)
         {
-            return await _context.Messages.FindAsync(id);
+            await _db.Messages.AddAsync(message);
+            await _db.SaveChangesAsync();
         }
 
-        public async Task<Message> CreateAsync(Message message)
+        public async Task DeleteAsync(Guid id)
         {
-            _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
-            return message;
+            var entity = await _db.Messages.FindAsync(id);
+            if (entity == null) return;
+            _db.Messages.Remove(entity);
+            await _db.SaveChangesAsync();
         }
 
-        public async Task<Message?> UpdateAsync(Guid id, Message message)
+        public async Task<IEnumerable<Message>> GetAllAsync()
         {
-            var existing = await _context.Messages.FindAsync(id);
-            if (existing == null) return null;
-
-            existing.Content = message.Content;
-            
-
-            await _context.SaveChangesAsync();
-            return existing;
+            return await _db.Messages.AsNoTracking().ToListAsync();
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<Message> GetByIdAsync(Guid id)
         {
-            var existing = await _context.Messages.FindAsync(id);
-            if (existing == null) return false;
+            return await _db.Messages.FindAsync(id);
+        }
 
-            _context.Messages.Remove(existing);
-            await _context.SaveChangesAsync();
-            return true;
+        public async Task UpdateAsync(Message message)
+        {
+           
+            _db.Messages.Update(message);
+            await _db.SaveChangesAsync();
         }
     }
 }

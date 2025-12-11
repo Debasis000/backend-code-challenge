@@ -4,10 +4,9 @@ namespace CodeChallenge.Api.Repositories;
 
 public interface IMessageRepository
 {
-
-    Task<Message?> GetByIdAsync(Guid id);
-    Task<Message> CreateAsync(Message message);
-    Task<Message?> UpdateAsync(Guid id, Message message);
-    Task<bool> DeleteAsync(Guid id);
-    
+    Task AddAsync(Message message);
+    Task UpdateAsync(Message message);
+    Task DeleteAsync(Guid id);
+    Task<Message> GetByIdAsync(Guid id);
+    Task<IEnumerable<Message>> GetAllAsync();
 }

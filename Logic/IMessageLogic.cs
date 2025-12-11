@@ -4,12 +4,10 @@ namespace CodeChallenge.Api.Logic;
 
 public interface IMessageLogic
 {
-
-    Task<Message> CreateMessageAsync(Message message);
-    Task<Message?> GetMessageAsync(Guid id);
-    Task<Message?> UpdateMessageAsync(Guid id, UpdateMessageDto dto);
-    Task<bool> DeleteMessageAsync(Guid id);
-  
+    Task<Message> GetByIdAsync(Guid id);
+    Task<Message> CreateAsync(CreateMessageRequest request);
+    Task<Message> UpdateMessageAsync(Guid id, UpdateMessageRequest request);
+    Task<bool> DeleteAsync(Guid id);
 }
 
 

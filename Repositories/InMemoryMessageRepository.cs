@@ -1,118 +1,38 @@
 using CodeChallenge.Api.Models;
+using System.Collections.Concurrent;
 
 namespace CodeChallenge.Api.Repositories;
 
 public class InMemoryMessageRepository : IMessageRepository
 {
-    private readonly Dictionary<Guid, Message> _messages = new();
-    private readonly object _lock = new();
+    private readonly ConcurrentDictionary<Guid, Message> _store = new();
 
-    public Task<Message?> GetByIdAsync(Guid organizationId, Guid id)
+    public Task AddAsync(Message message)
     {
-        lock (_lock)
-        {
-           if (_messages.TryGetValue(id, out var message) && message.OrganizationId == organizationId)
-                {
-         return Task.FromResult<Message?>(message);
-          }
-            return Task.FromResult<Message?>(null);
-        }
+        _store[message.Id] = message;
+        return Task.CompletedTask;
     }
 
-    public Task<IEnumerable<Message>> GetAllByOrganizationAsync(Guid organizationId)
+    public Task DeleteAsync(Guid id)
     {
-        lock (_lock)
-        {
-            var messages = _messages.Values
-           .Where(m => m.OrganizationId == organizationId)
-           .OrderByDescending(m => m.CreatedAt)
-           .ToList();
-            return Task.FromResult<IEnumerable<Message>>(messages);
-        }
+        _store.TryRemove(id, out _);
+        return Task.CompletedTask;
     }
 
-    public Task<Message?> GetByTitleAsync(Guid organizationId, string title)
+    public Task<IEnumerable<Message>> GetAllAsync()
     {
-        lock (_lock)
-        {
-             var message = _messages.Values
-          .FirstOrDefault(m => m.OrganizationId == organizationId && 
-              m.Title.Equals(title, StringComparison.OrdinalIgnoreCase));
-            return Task.FromResult(message);
-        }
+        return Task.FromResult<IEnumerable<Message>>(_store.Values.ToList());
     }
 
-    public Task<Message> CreateAsync(Message message)
+    public Task<Message> GetByIdAsync(Guid id)
     {
-        lock (_lock)
-        {
-            message.Id = Guid.NewGuid();
-            message.CreatedAt = DateTime.UtcNow;
-            _messages[message.Id] = message;
-          return Task.FromResult(message);
-        }
+        _store.TryGetValue(id, out var message);
+        return Task.FromResult(message);
     }
 
-    public Task<Message?> UpdateAsync(Message message)
+    public Task UpdateAsync(Message message)
     {
-        lock (_lock)
-      {
-         if (_messages.ContainsKey(message.Id))
-          {
-           message.UpdatedAt = DateTime.UtcNow;
-              _messages[message.Id] = message;
-             return Task.FromResult<Message?>(message);
-          }
-            return Task.FromResult<Message?>(null);
-        }
-    }
-
-    public Task<bool> DeleteAsync(Guid organizationId, Guid id)
-    {
-        lock (_lock)
-        {
-        if (_messages.TryGetValue(id, out var message) && message.OrganizationId == organizationId) 
-          {
-            return Task.FromResult(_messages.Remove(id));
-          }
-            return Task.FromResult(false);
-        }
-    }
-
-    public Task<Message?> GetByIdAsync(Guid id)
-    {
-        lock (_lock)
-        {
-            _messages.TryGetValue(id, out var message);
-            return Task.FromResult(message); 
-        }
-    }
-
-    public Task<Message?> UpdateAsync(Guid id, Message message)
-    {
-        lock (_lock)
-        {
-            if (!_messages.ContainsKey(id))
-                return Task.FromResult<Message?>(null);
-
-           
-            if (_messages[id].OrganizationId != message.OrganizationId)
-                throw new UnauthorizedAccessException("Cannot change the OrganizationId of a message");
-
-            
-            message.Id = id;
-            message.UpdatedAt = DateTime.UtcNow;
-
-            _messages[id] = message;
-            return Task.FromResult<Message?>(message);
-        }
-    }
-
-    public Task<bool> DeleteAsync(Guid id)
-    {
-        lock (_lock)
-        {
-            return Task.FromResult(_messages.Remove(id));
-        }
+        _store[message.Id] = message;
+        return Task.CompletedTask;
     }
 }
