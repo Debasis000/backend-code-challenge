@@ -6,48 +6,49 @@ using Microsoft.AspNetCore.Mvc;
 namespace CodeChallenge.Api.Controllers;
 
 [ApiController]
-[Route("api/v1/organizations/{organizationId}/messages")]
+[Route("api/v1/messages")]
 public class MessagesController : ControllerBase
 {
     private readonly IMessageLogic _messageLogic;
 
-    // Fixed: Depends on IMessageLogic, not IMessageRepository (separation of concerns)
     public MessagesController(IMessageLogic messageLogic)
     {
         _messageLogic = messageLogic;
     }
 
-    [HttpPost]
-    public async Task<ActionResult<Message>> Create([FromBody] Message message)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> Get(Guid id)
     {
-        var created = await _messageLogic.CreateMessageAsync(message);
-        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Message>> Get(Guid id)
-    {
-        var message = await _messageLogic.GetMessageAsync(id);
+        var message = await _messageLogic.GetByIdAsync(id);
         if (message == null) return NotFound();
         return Ok(message);
     }
 
-   
-    [HttpPut("{id}")]
-    public async Task<ActionResult<Message>> Update(Guid id, [FromBody] UpdateMessageDto dto)
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateMessageRequest request)
     {
-        var updated = await _messageLogic.UpdateMessageAsync(id, dto);
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var created = await _messageLogic.CreateAsync(request);
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateMessageRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var updated = await _messageLogic.UpdateMessageAsync(id, request);
         if (updated == null) return NotFound();
+
         return Ok(updated);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var deleted = await _messageLogic.DeleteMessageAsync(id);
+        var deleted = await _messageLogic.DeleteAsync(id);
         if (!deleted) return NotFound();
         return NoContent();
     }
-
-
 }

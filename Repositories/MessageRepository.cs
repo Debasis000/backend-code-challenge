@@ -1,45 +1,48 @@
-﻿using CodeChallenge.Api.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using CodeChallenge.Api.Models;
 
 namespace CodeChallenge.Api.Repositories
 {
-    public class MessageRepository: IMessageRepository
+    public class MessageRepository : IMessageRepository
     {
         private readonly List<Message> _messages = new();
-        private static int _nextId = 1; 
 
-        public async Task<Message?> GetByIdAsync(Guid id)
+        public Task AddAsync(Message message)
         {
-            await Task.Delay(1); 
-            return _messages.FirstOrDefault(m => m.Id == id);
-        }
-
-        public async Task<Message> CreateAsync(Message message)
-        {
-            if (message.Id == Guid.Empty)
-                message.Id = Guid.NewGuid();
-            if (message.CreatedAt == default)
-                message.CreatedAt = DateTime.UtcNow;
             _messages.Add(message);
-            await Task.Delay(1);
-            return message;
+            return Task.CompletedTask; 
         }
 
-        public async Task<Message?> UpdateAsync(Guid id, Message message)
+        public Task UpdateAsync(Message message)
         {
-            var existing = _messages.FirstOrDefault(m => m.Id == id);
-            if (existing == null) return null;
-            existing.Content = message.Content;
-            await Task.Delay(1);
-            return existing;
+            var existing = _messages.FirstOrDefault(m => m.Id == message.Id);
+            if (existing != null)
+            {
+                existing.Content = message.Content;
+                existing.IsActive = message.IsActive;
+                existing.UpdatedAt = message.UpdatedAt;
+            }
+            return Task.CompletedTask;
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public Task DeleteAsync(Guid id)
         {
-            var existing = _messages.FirstOrDefault(m => m.Id == id);
-            if (existing == null) return false;
-            _messages.Remove(existing);
-            await Task.Delay(1);
-            return true;
+            _messages.RemoveAll(m => m.Id == id);
+            return Task.CompletedTask;
+        }
+
+        public Task<Message> GetByIdAsync(Guid id)
+        {
+            var message = _messages.FirstOrDefault(m => m.Id == id);
+            return Task.FromResult(message); 
+        }
+
+        public Task<IEnumerable<Message>> GetAllAsync()
+        {
+            return Task.FromResult<IEnumerable<Message>>(_messages);
         }
     }
 }

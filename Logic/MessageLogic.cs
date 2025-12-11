@@ -5,43 +5,47 @@ namespace CodeChallenge.Api.Logic
 {
     public class MessageLogic : IMessageLogic
     {
-        private readonly IMessageRepository _messageRepository;
+        private readonly IMessageRepository _repo;
 
-       
-        public MessageLogic(IMessageRepository messageRepository)
+        public MessageLogic(IMessageRepository repo)
         {
-            _messageRepository = messageRepository;
+            _repo = repo;
         }
 
-        public async Task<Message> CreateMessageAsync(Message message)
+        public async Task<Message> CreateAsync(CreateMessageRequest request)
         {
-           
-            if (string.IsNullOrWhiteSpace(message.Content))
-                throw new ArgumentException("Content is required");
+            var entity = new Message
+            {
+                Content = request.Content,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
 
-            return await _messageRepository.CreateAsync(message);
+            await _repo.AddAsync(entity);
+            return entity;
         }
 
-        public async Task<Message?> GetMessageAsync(Guid id)
+        public async Task<Message> GetByIdAsync(Guid id) => await _repo.GetByIdAsync(id);
+
+        public async Task<Message> UpdateMessageAsync(Guid id, UpdateMessageRequest request)
         {
-            
-            return await _messageRepository.GetByIdAsync(id);
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null) return null;
+
+          
+            existing.Content = request.Content;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            await _repo.UpdateAsync(existing);
+            return existing;
         }
 
-        public async Task<Message?> UpdateMessageAsync(Guid id, UpdateMessageDto dto)
+        public async Task<bool> DeleteAsync(Guid id)
         {
-            if (string.IsNullOrWhiteSpace(dto.Content))
-                throw new ArgumentException("Content is required");
-
-            var message = new Message { Content = dto.Content };
-            
-            return await _messageRepository.UpdateAsync(id, message);
-        }
-
-        public async Task<bool> DeleteMessageAsync(Guid id)
-        {
-           
-            return await _messageRepository.DeleteAsync(id);
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null) return false;
+            await _repo.DeleteAsync(id);
+            return true;
         }
 
 
